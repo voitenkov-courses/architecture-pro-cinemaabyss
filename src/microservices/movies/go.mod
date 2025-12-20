@@ -1,4 +1,4 @@
-module github.com/cinemaabyss/microservices/movies
+module github.com/voitenkov-courses/architecture-pro-cinemaabyss/src/microservices/movies
 
 go 1.23
 

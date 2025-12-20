@@ -1,4 +1,4 @@
-module github.com/cinemaabyss/monolith
+module github.com/voitenkov-courses/architecture-pro-cinemaabyss/src/monolith
 
 go 1.23
 

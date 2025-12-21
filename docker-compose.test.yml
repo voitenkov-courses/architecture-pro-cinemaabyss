@@ -5,6 +5,7 @@ services:
   postgres:
     image: postgres:14
     container_name: cinemaabyss-postgres
+    hostname: postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres_password
@@ -28,8 +29,10 @@ services:
       context: ./src/monolith
       dockerfile: Dockerfile
     container_name: cinemaabyss-monolith
+    hostname: monolith
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     ports:
       - "8080:8080"
     environment:
@@ -44,8 +47,10 @@ services:
       context: ./src/microservices/movies
       dockerfile: Dockerfile
     container_name: cinemaabyss-movies-service
+    hostname: movies-service
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     ports:
       - "8081:8081"
     environment:
@@ -60,9 +65,12 @@ services:
       context: ./src/microservices/proxy
       dockerfile: Dockerfile
     container_name: cinemaabyss-proxy-service
+    hostname: proxy-service
     depends_on:
-      - monolith
-      - movies-service
+      monolith:
+        condition: service_started
+      movies-service:
+        condition: service_started
     ports:
       - "8000:8000"
     environment:
@@ -71,7 +79,7 @@ services:
       MOVIES_SERVICE_URL: http://movies-service:8081
       EVENTS_SERVICE_URL: http://events-service:8082
       GRADUAL_MIGRATION: "true"
-      MOVIES_MIGRATION_PERCENT: "50"
+      MOVIES_MIGRATION_PERCENT: "34"
     networks:
       - cinemaabyss-network
 

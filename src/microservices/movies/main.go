@@ -9,19 +9,12 @@ import (
 	"os"
 
 	_ "github.com/lib/pq"
+
+	"github.com/voitenkov-courses/architecture-pro-cinemaabyss/src/microservices/movies/models"
 )
 
 // Database connection
 var db *sql.DB
-
-// Models
-type Movie struct {
-	ID          int      `json:"id"`
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	Genres      []string `json:"genres"`
-	Rating      float64  `json:"rating"`
-}
 
 func main() {
 	// Initialize database connection
@@ -90,9 +83,9 @@ func getAllMovies(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	movies := []Movie{}
+	movies := []models.Movie{}
 	for rows.Next() {
-		var m Movie
+		var m models.Movie
 		if err := rows.Scan(&m.ID, &m.Title, &m.Description, &m.Rating); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -126,7 +119,7 @@ func getAllMovies(w http.ResponseWriter, r *http.Request) {
 
 func getMovieByID(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
-	var m Movie
+	var m models.Movie
 	err := db.QueryRow("SELECT id, title, description, rating FROM movies WHERE id = $1", id).Scan(&m.ID, &m.Title, &m.Description, &m.Rating)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -157,7 +150,7 @@ func getMovieByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func createMovie(w http.ResponseWriter, r *http.Request) {
-	var m Movie
+	var m models.Movie
 	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

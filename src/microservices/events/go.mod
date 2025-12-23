@@ -2,6 +2,7 @@ module github.com/voitenkov-courses/architecture-pro-cinemaabyss/src/microservic
 
 go 1.25.5
 
+<<<<<<< HEAD
 require github.com/gin-gonic/gin v1.11.0
 
 require github.com/lib/pq v1.10.9 // indirect
@@ -41,3 +42,6 @@ require (
 	golang.org/x/tools v0.34.0 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
 )
+=======
+require github.com/voitenkov-courses/architecture-pro-cinemaabyss/src/microservices/movies v0.0.0-20251223131230-11e546002158 // indirect
+>>>>>>> main

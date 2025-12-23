@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/voitenkov-courses/architecture-pro-cinemaabyss/src/microservices/events/api"
+	movies "github.com/voitenkov-courses/architecture-pro-cinemaabyss/src/microservices/movies/modules"
 )
 
 // ensure that we've conformed to the `ServerInterface` with a compile-time check

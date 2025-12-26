@@ -130,13 +130,24 @@ jobs:
             type=ref,event=branch
             latest
 
-      - name: Build and push Events Service Docker image
+      - name: Build and push Events Service Docker image (amd64)
         uses: docker/build-push-action@v4
         with:
-          context: ./src/microservices/events
+          context: ./src/microservices/events/Dockerfile.amd64
           push: true
           tags: ${{ steps.meta-events.outputs.tags }}
           labels: ${{ steps.meta-events.outputs.labels }}
-          platforms: linux/amd64,linux/arm64/v8
+          platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max          
+
+      - name: Build and push Events Service Docker image (arm64)
+        uses: docker/build-push-action@v4
+        with:
+          context: ./src/microservices/events/Dockerfile.arm64
+          push: true
+          tags: ${{ steps.meta-events.outputs.tags }}
+          labels: ${{ steps.meta-events.outputs.labels }}
+          platforms: linux/arm64/v8
+          cache-from: type=gha
+          cache-to: type=gha,mode=max     

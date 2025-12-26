@@ -65,7 +65,6 @@ yarn-error.log*
 
 # Build artifacts
 dist/
-build/
 out/
 target/
 .gradle/

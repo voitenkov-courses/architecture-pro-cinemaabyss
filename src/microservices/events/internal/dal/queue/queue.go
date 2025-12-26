@@ -3,73 +3,90 @@ package queue
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
+	"time"
 
-	amqp "github.com/rabbitmq/amqp091-go"
-
-	smarthomeintegration "github.com/voitenkov-courses/architecture-pro-warmhouse/apps/device-management/internal/controllers/smarthome-integration"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 type Queue struct {
-	conn *amqp.Connection
+	producer     *kafka.Producer
+	consumer     *kafka.Consumer
+	kafkaBrokers string
 }
-
-var rmqqueue amqp.Queue
 
 func (q *Queue) Connect() error {
 	var err error
-	q.conn, err = amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
+	kafkaBrokers := getEnv("KAFKA_BROKERS", "kafka:9092")
+	q.producer, err = kafka.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers": kafkaBrokers,
+	})
 	if err != nil {
-		return fmt.Errorf("connection error: %w", err)
+		return fmt.Errorf("producer connection error: %w", err)
 	}
+
+	q.consumer, err = kafka.NewConsumer(&kafka.ConfigMap{
+		"bootstrap.servers": kafkaBrokers,
+		"group.id":          "eventsGroup",
+		"auto.offset.reset": "earliest",
+	})
+	if err != nil {
+		return fmt.Errorf("consumer connection error: %w", err)
+	}
+
 	return nil
 }
 
-func (q *Queue) Close() error {
-	return q.conn.Close()
+func (q *Queue) Close() {
+	q.producer.Close()
+	q.consumer.Close()
 }
 
-func (q *Queue) ReceiveAndProcessSensorUpdates(ctx context.Context, fn smarthomeintegration.CallbackFunc) error {
-	queueName := "sensorupdates"
-	channel, err := q.conn.Channel()
+func (q *Queue) SendEvents(ctx context.Context, eventType string, eventPayload []byte) error {
+	topic := eventType
+	err := q.producer.Produce(&kafka.Message{
+		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
+		Value:          eventPayload,
+		Timestamp:      time.Now(),
+		TimestampType:  kafka.TimestampCreateTime,
+	}, nil)
 	if err != nil {
-		return fmt.Errorf("channel error: %w", err)
+		return err
 	}
 
-	if rmqqueue, err = channel.QueueDeclare(
-		queueName, // name
-		false,     // durable
-		false,     // auto-delete
-		false,     // exclusive
-		false,     // noWait
-		nil,       // arguments
-	); err != nil {
-		return fmt.Errorf("queue declaration error: %w", err)
-	}
+	// Дождаться доставки сообщений перед закрытием продюсера
+	q.producer.Flush(15 * 1000)
 
-	telemetry, err := channel.ConsumeWithContext(
-		ctx,
-		queueName,
-		"",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
+	return nil
+}
+
+func (q *Queue) ReceiveEvents(ctx context.Context) error {
+	topics := []string{"movie-events", "user-events", "payment-events"}
+	err := q.consumer.SubscribeTopics(topics, nil)
 	if err != nil {
-		return fmt.Errorf("failed open channel: %w", err)
+		log.Println(err)
+		return err
 	}
-
-	go func() {
-		for telemetryMessage := range telemetry {
-			fn(ctx, telemetryMessage.Body)
+	for {
+		msg, err := q.consumer.ReadMessage(-1)
+		if err == nil {
+			log.Printf("Received message: %s\n", string(msg.Value))
+		} else {
+			// Обработка ошибок при чтении сообщений
+			log.Printf("Consumer error: %v (%v)\n", err, msg)
 		}
-	}()
-
-	<-ctx.Done()
-	return nil
+	}
 }
 
-func New() *Queue {
-	return &Queue{}
+func New(kafkaBrokers string) *Queue {
+	return &Queue{kafkaBrokers: kafkaBrokers}
+}
+
+func getEnv(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
 }

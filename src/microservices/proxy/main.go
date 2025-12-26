@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -49,15 +50,28 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	http.Handle("/", proxy)
+	http.HandleFunc("/health", handleHealth)
+	http.Handle("/api/users", proxy)
+	http.Handle("/api/movies", proxy)
+	http.Handle("/api/payments", proxy)
+	http.Handle("/api/subscriptions", proxy)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
+}
+
+func handleHealth(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]bool{"status": true})
 }
 
 func NewProxy() (*httputil.ReverseProxy, error) {
 	proxy := &httputil.ReverseProxy{
 		Rewrite: func(r *httputil.ProxyRequest) {
-			r.SetURL(defineURL())
+			if r.In.URL.Path == "/api/movies" {
+				r.SetURL(defineURL())
+			} else {
+				url, _ := url.Parse(monolithURL)
+				r.SetURL(url)
+			}
 		},
 	}
 

@@ -133,7 +133,7 @@ jobs:
       - name: Build and push Events Service Docker image (amd64)
         uses: docker/build-push-action@v4
         with:
-          context: ./src/microservices/events/Dockerfile.amd64
+          context: ./src/microservices/events/build/amd64
           push: true
           tags: ${{ steps.meta-events.outputs.tags }}
           labels: ${{ steps.meta-events.outputs.labels }}
@@ -144,7 +144,7 @@ jobs:
       - name: Build and push Events Service Docker image (arm64)
         uses: docker/build-push-action@v4
         with:
-          context: ./src/microservices/events/Dockerfile.arm64
+          context: ./src/microservices/events//build/amd64
           push: true
           tags: ${{ steps.meta-events.outputs.tags }}
           labels: ${{ steps.meta-events.outputs.labels }}

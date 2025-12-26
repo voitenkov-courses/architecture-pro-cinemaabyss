@@ -15,7 +15,7 @@ RUN apk --no-cache update && \
 apk --no-cache add gcc libc-dev clang zig
 
 # Build the application
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \ 
+RUN CGO_ENABLED=1 GOOS=linux \ 
     CC='zig cc -target x86_64-linux-musl' \
     CXX='zig cc -target x86_64-linux-musl' \
 go build -tags musl -o events-service .

@@ -5,7 +5,7 @@ global:
 
 # Image pull secrets
 imagePullSecrets:
-  dockerconfigjson: ewoJImF1dGhzIjogewoJCSJnaGNyLmlvIjogewoJCQkiYXV0aCI6
+  dockerconfigjson: ewoJImF1dGhzIjogewogICAgICAgICAgICAgICAgImdoY3IuaW8iOiB7CiAgICAgICAgICAgICAgICAgICAgImF1dGgiOiAiZG05NWRHVnVhMjkyUUdsdVltOTRMbkoxT21kb2NGOTFkMGxyYUV4TFQwTjRSVVZ4YkVGc1JFMWlOR1U1VVhSME9VcEhXbEV6YTFrM1RVST0iCiAgICAgICAgICAgICAgICB9Cgl9LAoJImN1cnJlbnRDb250ZXh0IjogImNvbGltYSIKfQo=
 # Database configuration
 database:
   host: postgres
@@ -22,8 +22,8 @@ database:
       cpu: 1000m
       memory: 1Gi
     requests:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 100m
+      memory: 50Mi
   persistence:
     enabled: true
     size: 10Gi
@@ -33,7 +33,7 @@ database:
 monolith:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/monolith
+    repository: ghcr.io/voitenkov-courses/architecture-pro-cinemaabyss/monolith
     tag: latest
     pullPolicy: Always
   replicas: 1
@@ -42,8 +42,8 @@ monolith:
       cpu: 500m
       memory: 512Mi
     requests:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 10m
+      memory: 10Mi
   service:
     port: 8080
     targetPort: 8080
@@ -53,7 +53,7 @@ monolith:
 proxyService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/proxy-service
+    repository: ghcr.io/voitenkov-courses/architecture-pro-cinemaabyss/proxy-service
     tag: latest
     pullPolicy: Always
   replicas: 1
@@ -62,8 +62,8 @@ proxyService:
       cpu: 300m
       memory: 256Mi
     requests:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 10m
+      memory: 10Mi
   service:
     port: 80
     targetPort: 8000
@@ -73,7 +73,7 @@ proxyService:
 moviesService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/movies-service
+    repository: ghcr.io/voitenkov-courses/architecture-pro-cinemaabyss/movies-service
     tag: latest
     pullPolicy: Always
   replicas: 1
@@ -82,8 +82,8 @@ moviesService:
       cpu: 300m
       memory: 256Mi
     requests:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 10m
+      memory: 10Mi
   service:
     port: 8081
     targetPort: 8081
@@ -93,7 +93,7 @@ moviesService:
 eventsService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/events-service
+    repository: ghcr.io/voitenkov-courses/architecture-pro-cinemaabyss/events-service
     tag: latest
     pullPolicy: Always
   replicas: 1
@@ -102,19 +102,20 @@ eventsService:
       cpu: 300m
       memory: 256Mi
     requests:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 10m
+      memory: 10Mi
   service:
     port: 8082
     targetPort: 8082
     type: ClusterIP
+  kafkaBrokers: "kafka:9092"
 
 # Kafka configuration
 kafka:
   enabled: true
   image:
-    repository: wurstmeister/kafka
-    tag: 2.13-2.7.0
+    repository: apache/kafka
+    tag: latest
     pullPolicy: IfNotPresent
   replicas: 1
   resources:
@@ -123,37 +124,7 @@ kafka:
       memory: 1Gi
     requests:
       cpu: 200m
-      memory: 512Mi
-  persistence:
-    enabled: true
-    size: 5Gi
-    accessMode: ReadWriteOnce
-  topics:
-    - name: movie-events
-      partitions: 1
-      replicationFactor: 1
-    - name: user-events
-      partitions: 1
-      replicationFactor: 1
-    - name: payment-events
-      partitions: 1
-      replicationFactor: 1
-
-# Zookeeper configuration
-zookeeper:
-  enabled: true
-  image:
-    repository: wurstmeister/zookeeper
-    tag: latest
-    pullPolicy: IfNotPresent
-  replicas: 1
-  resources:
-    limits:
-      cpu: 500m
-      memory: 512Mi
-    requests:
-      cpu: 100m
-      memory: 256Mi
+      memory: 50Mi
   persistence:
     enabled: true
     size: 1Gi
@@ -162,21 +133,10 @@ zookeeper:
 # Ingress configuration
 ingress:
   enabled: true
-  className: nginx
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-  hosts:
-    - host: cinemaabyss.example.com
-      paths:
-        - path: /
-          pathType: Prefix
-          service: proxy-service
-          port: 80
-        - path: /api/events
-          pathType: Prefix
-          service: events-service
-          port: 8082
+  host: cinemaabyss.example.com
 
 # Application configuration
 config:

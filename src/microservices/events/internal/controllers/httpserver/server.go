@@ -3,6 +3,7 @@ package httpserver
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -44,6 +45,8 @@ func (Server) CreateMovieEvent(c *gin.Context) {
 		sendEvents("movie-events", event)
 	}
 
+	receiveEvents("movie-events")
+
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
 	})
@@ -63,6 +66,8 @@ func (Server) CreatePaymentEvent(c *gin.Context) {
 		sendEvents("payment-events", event)
 	}
 
+	receiveEvents("payment-events")
+
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
 	})
@@ -81,6 +86,8 @@ func (Server) CreateUserEvent(c *gin.Context) {
 	if err == nil {
 		sendEvents("user-events", event)
 	}
+
+	receiveEvents("user-events")
 
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
@@ -113,6 +120,35 @@ func sendEvents(eventType string, eventPayload []byte) error {
 	// Дождаться доставки сообщений перед закрытием продюсера
 	producer.Flush(1 * 1000)
 
+	return nil
+}
+
+func receiveEvents(eventType string) error {
+	kafkaBrokers := getEnv("KAFKA_BROKERS", "kafka:9092")
+	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"bootstrap.servers": kafkaBrokers,
+		"group.id":          "eventsGroup",
+		"auto.offset.reset": "earliest",
+	})
+	if err != nil {
+		return fmt.Errorf("consumer connection error: %w", err)
+	}
+
+	defer consumer.Close()
+
+	err = consumer.SubscribeTopics([]string{eventType}, nil)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	msg, err := consumer.ReadMessage(-1)
+	if err == nil {
+		log.Printf("Received message: %s\n", string(msg.Value))
+	} else {
+		// Обработка ошибок при чтении сообщений
+		log.Printf("Consumer error: %v (%v)\n", err, msg)
+	}
 	return nil
 }
 

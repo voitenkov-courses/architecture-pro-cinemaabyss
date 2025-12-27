@@ -63,6 +63,8 @@ spec:
           value: PLAINTEXT://kafka:9092
         - name: KAFKA_LISTENERS
           value: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093"
+        - name: KAFKA_CONTROLLER_LISTENER_NAMES
+          value: CONTROLLER          
         - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
           value: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
         - name: KAFKA_CONTROLLER_QUORUM_VOTERS
@@ -74,7 +76,9 @@ spec:
         - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
           value: "1"
         - name: KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS
-          value: "0"                    
+          value: "0"
+        - name: KAFKA_NUM_PARTITIONS
+          value: "3"                              
         - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
           value: "true"
         volumeMounts:

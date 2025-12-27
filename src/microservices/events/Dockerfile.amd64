@@ -16,8 +16,8 @@ apk --no-cache add gcc libc-dev clang zig
 
 # Build the application
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \ 
-    CC='zig cc -target x86_64-linux-musl-gcc' \
-    CXX='zig cc -target x86_64-linux-musl-g++' \
+    CC='zig cc -target x86_64-linux-musl' \
+    CXX='zig cc -target x86_64-linux-musl' \
 go build -tags musl -o events-service .
 
 # Use a smaller image for the final application

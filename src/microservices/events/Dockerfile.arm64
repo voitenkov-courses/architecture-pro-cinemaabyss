@@ -15,9 +15,9 @@ RUN apk --no-cache update && \
 apk --no-cache add gcc libc-dev clang zig
 
 # Build the application
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=arm64 \
-    CC='zig cc -target aarch64-linux-musl' \
-    CXX='zig cc -target aarch64-linux-musl' \
+RUN CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 \
+    CC='zig cc -target aarch64-darwin' \
+    CXX='zig cc -target aarch64-darwin' \
 go build -tags musl --ldflags '-linkmode external -extldflags "-static"' -o events-service .
 
 # Use a smaller image for the final application

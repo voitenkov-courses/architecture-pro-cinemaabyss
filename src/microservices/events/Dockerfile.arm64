@@ -15,8 +15,8 @@ RUN apk --no-cache update && \
 apk --no-cache add gcc libc-dev clang zig
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64  \
-go build --ldflags '-linkmode external -extldflags "-static"' -o events-service .
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64  \
+go build -tag musl --ldflags '-linkmode external -extldflags "-static"' -o events-service .
 
 # Use a smaller image for the final application
 FROM alpine:latest  

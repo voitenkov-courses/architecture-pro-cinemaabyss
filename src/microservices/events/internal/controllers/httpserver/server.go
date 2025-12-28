@@ -45,7 +45,7 @@ func (Server) CreateMovieEvent(c *gin.Context) {
 		sendEvents("movie-events", event)
 	}
 
-	receiveEvents("movie-events")
+	// receiveEvents("movie-events")
 
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
@@ -66,7 +66,7 @@ func (Server) CreatePaymentEvent(c *gin.Context) {
 		sendEvents("payment-events", event)
 	}
 
-	receiveEvents("payment-events")
+	// receiveEvents("payment-events")
 
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
@@ -87,7 +87,7 @@ func (Server) CreateUserEvent(c *gin.Context) {
 		sendEvents("user-events", event)
 	}
 
-	receiveEvents("user-events")
+	// receiveEvents("user-events")
 
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",

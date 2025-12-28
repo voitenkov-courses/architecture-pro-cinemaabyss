@@ -53,6 +53,7 @@ func main() {
 	http.HandleFunc("/health", handleHealth)
 	http.Handle("/api/users", proxy)
 	http.Handle("/api/movies", proxy)
+	http.Handle("/api/movies/health", proxy)
 	http.Handle("/api/payments", proxy)
 	http.Handle("/api/subscriptions", proxy)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
@@ -66,9 +67,13 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 func NewProxy() (*httputil.ReverseProxy, error) {
 	proxy := &httputil.ReverseProxy{
 		Rewrite: func(r *httputil.ProxyRequest) {
-			if r.In.URL.Path == "/api/movies" {
+			switch r.In.URL.Path {
+			case "/api/movies":
 				r.SetURL(defineURL())
-			} else {
+			case "/api/movies/health":
+				url, _ := url.Parse(moviesURL)
+				r.SetURL(url)
+			default:
 				url, _ := url.Parse(monolithURL)
 				r.SetURL(url)
 			}

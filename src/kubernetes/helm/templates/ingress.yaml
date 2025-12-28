@@ -37,6 +37,13 @@ spec:
               name: proxy-service
               port:
                 number: {{ .Values.proxyService.service.port }}
+        - path: /api/movies/health
+          pathType: Prefix
+          backend:
+            service:
+              name: proxy-service
+              port:
+                number: {{ .Values.proxyService.service.port }}
         - path: /api/payments
           pathType: Prefix
           backend:

@@ -1,0 +1,57 @@
+@startuml
+title  Cinemaabyss Container Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+Person(User, "Пользователь", "")
+
+System_Ext(Processing, "Процессинг платежа", "")
+System_Ext(Cinema, "Онлайн кинотеатры", "")
+System_Ext(Recommendations, "Рекомендательная система", "")
+System_Ext(Loyality, "Системы лояльности", "")
+
+System_Boundary(CinemaAbyss, "Система Cinemaabyss") {
+  Container(WebApp, "Веб приложение", "", "")
+  Container(MobileApp, "Мобильное приложение", "", "")
+  Container(SmartTVApp, "Смарт ТВ", "", "")
+  Container(WebAppBFF, "Backend For Frontend Веб приложение", "", "")
+  Container(MobileAppBFF, "Backend For Frontend Мобильное приложение", "", "")
+  Container(SmartTVBFF, "Backend For Frontend Смарт ТВ", "", "")
+  Container(APIGateway, "APIGateway", "", "")  
+  Container(Payment, "Микросервис управления платежами", "Go", "")
+  ContainerDb(PaymentDB, "База данных микросервиса управления платежами", "PostgreSQL", "")
+  Container(UserService, "Микросервис управления пользователями", "Go", "")
+  ContainerDb(UserDB, "База данных микросервиса управления пользователями", "PostgreSQL", "")
+  Container(Content, "Микросервис управления контентом", "Go", "")
+  ContainerDb(ContentDB, "База данных микросервиса управления контентом", "PostgreSQL", "")
+  Container(Subscription, "Микросервис управления подписками", "Go", "")
+  ContainerDb(SubscriptionDB, "База данных микросервиса управления подписками", "PostgreSQL", "")
+  ContainerQueue(Queue, "Очередь", "Kafka", "")
+}
+
+Rel(User, WebApp, "Использует систему")
+Rel(User, MobileApp, "Использует систему")
+Rel(User, SmartTVApp, "Использует систему")
+Rel(WebApp, WebAppBFF, "Rest API [HTTPS]")
+Rel(MobileApp, MobileAppBFF, "GraphQL")
+Rel(SmartTVApp, SmartTVBFF, "GraphQL")
+Rel(WebAppBFF, APIGateway,"Rest API [HTTPS]")
+Rel(MobileAppBFF, APIGateway,"Rest API [HTTPS]")
+Rel(SmartTVBFF, APIGateway,"Rest API [HTTPS]")
+Rel(APIGateway, Payment,"Rest API [HTTPS]")
+Rel(APIGateway, UserService,"Rest API [HTTPS]")
+Rel(APIGateway, Content,"Rest API [HTTPS]")
+Rel(APIGateway, Subscription, "Rest API [HTTPS]")
+Rel(Payment, Processing , "Отправка платежа")
+Rel(Content, Cinema, "Стриминг контента")
+Rel(Subscription, Loyality, "Запрашивает данные для расчета скидок")
+Rel(Recommendations,Queue, "Отправляет рекомендации, принимает статистику")
+Rel(Content,Queue, "Отправляет статистику, забирает рекомендации")
+Rel(Payment, PaymentDB,"Отправляет SQL-запросы")
+Rel(UserService, UserDB,"Отправляет SQL-запросы")
+Rel(Content, ContentDB,"Отправляет SQL-запросы")
+Rel(Subscription, SubscriptionDB,"Отправляет SQL-запросы")
+
+@enduml

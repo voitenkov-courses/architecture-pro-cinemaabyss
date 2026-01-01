@@ -5,6 +5,7 @@ services:
   postgres:
     image: postgres:14
     container_name: cinemaabyss-postgres
+    hostname: postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres_password
@@ -22,31 +23,31 @@ services:
     networks:
       - cinemaabyss-network
 
-  # ZooKeeper for Kafka
-  zookeeper:
-    image: wurstmeister/zookeeper:latest
-    container_name: cinemaabyss-zookeeper
-    ports:
-      - "2181:2181"
-    networks:
-      - cinemaabyss-network
-
   # Kafka
   kafka:
-    image: wurstmeister/kafka:2.13-2.7.0
+    image: apache/kafka:latest
     container_name: cinemaabyss-kafka
-    depends_on:
-      - zookeeper
-    ports:
-      - "9092:9092"
+    hostname: kafka
     environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CREATE_TOPICS: "movie-events:1:1,user-events:1:1,payment-events:1:1"
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 3
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD-SHELL", "cd /opt/kafka/bin && echo 'test-message' | ./kafka-console-producer.sh --bootstrap-server localhost:9092 --topic health-check-topic && ./kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic health-check-topic --from-beginning --max-messages 1 | grep 'test-message'"]
+      start_period: 30s
+      interval: 20s
+      timeout: 5s
+      retries: 5
     networks:
       - cinemaabyss-network
 
@@ -56,8 +57,10 @@ services:
       context: ./src/monolith
       dockerfile: Dockerfile
     container_name: cinemaabyss-monolith
+    hostname: monolith
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy  
     ports:
       - "8080:8080"
     environment:
@@ -72,8 +75,10 @@ services:
       context: ./src/microservices/movies
       dockerfile: Dockerfile
     container_name: cinemaabyss-movies-service
+    hostname: movies-service
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy  
     ports:
       - "8081:8081"
     environment:
@@ -85,12 +90,15 @@ services:
   # Events Microservice
   events-service:
     build:
-      context: ./src/microservices/events
+      context: ./src/microservices/events      
       dockerfile: Dockerfile
     container_name: cinemaabyss-events-service
+    hostname: events-service
     depends_on:
-      - postgres
-      - kafka
+      postgres:
+        condition: service_healthy    
+      kafka:
+        condition: service_healthy 
     ports:
       - "8082:8082"
     environment:
@@ -105,10 +113,14 @@ services:
       context: ./src/microservices/proxy
       dockerfile: Dockerfile
     container_name: cinemaabyss-proxy-service
+    hostname: proxy-service
     depends_on:
-      - monolith
-      - movies-service
-      - events-service
+      monolith:
+        condition: service_started
+      movies-service:
+        condition: service_started
+      events-service:
+        condition: service_started        
     ports:
       - "8000:8000"
     environment:
@@ -125,14 +137,15 @@ services:
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: cinemaabyss-kafka-ui
+    hostname: kafka-ui
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy 
     ports:
       - "8090:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: cinemaabyss
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
     networks:
       - cinemaabyss-network
 
